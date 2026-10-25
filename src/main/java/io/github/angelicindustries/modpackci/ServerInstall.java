@@ -35,10 +35,13 @@ public final class ServerInstall {
         Lwjgl3ify.adjustMods(project, flavor, dir.resolve("mods"));
     }
 
-    /** runServer: a local server in run/, with its console attached, like GTNH's runServer. */
-    public static void run(Project project, Flavor flavor) {
+    /** runServer: a local server in run/, with its console attached and the local mods, like GTNH's runServer. */
+    public static void run(Project project, Flavor flavor, boolean buildLocalMods) {
         Path dir = project.root.resolve("run").resolve("server-" + flavor.id);
+        LocalMods.restore(dir);
+        List<Path> local = LocalMods.jars(project, "server", buildLocalMods);
         setup(project, dir, flavor);
+        LocalMods.install(dir, local);
         Processes.run(command(project, flavor), dir);
     }
 

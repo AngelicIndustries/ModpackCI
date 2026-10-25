@@ -20,19 +20,19 @@ public final class Main {
 
     static {
         task("runClient", "Plays the pack on Java 8, in run/client-java8", (p, a) -> {
-            ClientRun.run(p, Flavor.JAVA8);
+            ClientRun.run(p, Flavor.JAVA8, !a.contains("--no-build"));
             return 0;
         });
         task("runClient25", "Plays the pack on Java 25 with lwjgl3ify, in run/client-java25", (p, a) -> {
-            ClientRun.run(p, Flavor.JAVA25);
+            ClientRun.run(p, Flavor.JAVA25, !a.contains("--no-build"));
             return 0;
         });
         task("runServer", "Runs a local server in run/server-java8", (p, a) -> {
-            ServerInstall.run(p, Flavor.JAVA8);
+            ServerInstall.run(p, Flavor.JAVA8, !a.contains("--no-build"));
             return 0;
         });
         task("runServer25", "Same, on Java 25 in run/server-java25", (p, a) -> {
-            ServerInstall.run(p, Flavor.JAVA25);
+            ServerInstall.run(p, Flavor.JAVA25, !a.contains("--no-build"));
             return 0;
         });
         for (Flavor flavor : Flavor.values()) {

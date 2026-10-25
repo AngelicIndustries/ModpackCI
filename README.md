@@ -21,6 +21,8 @@ The Java 8 runs leave lwjgl3ify out. The Java 25 runs add lwjgl3ify and UniMixin
 
 `modpack.ini` (committed) lists project IDs and which files go where. `modpack-local.ini` (gitignored) overrides it on one machine and also sets Java and packwiz paths. Environment variables override both; the names are in `modpack.ini`'s comments and `modpack-local.ini.example`.
 
+`localMods` in `modpack-local.ini` adds mods you're working on to the run tasks: Gradle projects, built first, or jars. One with the same mod ID as a pack mod replaces it for the run.
+
 Release types: `mrpack-slim` (mods download from their original hosts), `mrpack-fat` (everything inside), `prism-java8` and `prism-java17` (Prism instance zips), `curseforge-zip`.
 
 | Destination | Types key | Project key | Token |

@@ -26,10 +26,14 @@ import java.util.zip.ZipInputStream;
 public final class ClientRun {
     private ClientRun() {}
 
-    /** runClient: plays the pack in run/client-java8 or run/client-java25. */
-    public static void run(Project project, Flavor flavor) {
+    /** runClient: plays the pack in run/client-java8 or run/client-java25, with the local mods. */
+    public static void run(Project project, Flavor flavor, boolean buildLocalMods) {
         Path game = project.root.resolve("run").resolve("client-" + flavor.id);
-        Processes.run(prepare(project, game, flavor, "Player"), game);
+        LocalMods.restore(game);
+        List<Path> local = LocalMods.jars(project, "client", buildLocalMods);
+        List<String> command = prepare(project, game, flavor, "Player");
+        LocalMods.install(game, local);
+        Processes.run(command, game);
     }
 
     /**

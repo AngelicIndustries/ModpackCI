@@ -36,6 +36,10 @@ public final class Config {
         JAVA8("java8", "MODPACKCI_JAVA8", false, "Java 8 binary to use instead of the downloaded one."),
         JAVA25("java25", "MODPACKCI_JAVA25", false, "Java 25 binary to use instead of the downloaded one."),
         PACKWIZ("packwiz", "MODPACKCI_PACKWIZ", false, "packwiz binary to use instead of the downloaded one."),
+        LOCAL_MODS("localMods", "MODPACKCI_LOCAL_MODS", false,
+                "Mods on this machine that runClient and runServer add: Gradle projects (built with gradlew assemble)"
+                        + " or jars, comma-separated, relative to this folder. One with the same mod ID as a pack mod"
+                        + " replaces it. Add @client or @server for one side only. --no-build skips the builds."),
         CURSEFORGE_TOKEN("curseForgeToken", "CURSEFORGE_TOKEN", false, "CurseForge upload token."),
         MODRINTH_TOKEN("modrinthToken", "MODRINTH_TOKEN", false, "Modrinth token."),
         SIX_SEVEN_TOKEN("sixSevenToken", "SIX_SEVEN_TOKEN", false, "67minecraft.com token.");
