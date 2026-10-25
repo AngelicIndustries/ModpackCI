@@ -85,8 +85,14 @@ public final class Smoke {
             throw new UncheckedIOException(e);
         }
         Path console = game.resolve("console.log");
-        Process proc = start(new ProcessBuilder(command).directory(game.toFile())
-                .redirectErrorStream(true).redirectOutput(console.toFile()));
+        ProcessBuilder builder = new ProcessBuilder(command).directory(game.toFile())
+                .redirectErrorStream(true).redirectOutput(console.toFile());
+        // lwjgl3ify writes a desktop entry there on Linux and quits if the folder is missing, as it
+        // is on CI machines. This also keeps test runs out of the real ~/.local/share.
+        Path xdgData = game.resolve("xdg-data");
+        FileUtil.write(xdgData.resolve(".keep"), "");
+        builder.environment().put("XDG_DATA_HOME", xdgData.toString());
+        Process proc = start(builder);
         try {
             waitFor(proc, console, log, WORLD_RAN, timeoutSeconds);
             // The helper quits the game once the world has run.
