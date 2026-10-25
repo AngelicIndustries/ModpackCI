@@ -42,7 +42,8 @@ public final class Packwiz {
         List<String> command = new ArrayList<>();
         command.add(binary(project).toString());
         command.addAll(args);
-        return Processes.run(command, project.pack().dir);
+        // Not project.pack(): that reads every metafile, and fixing a broken index is what refresh is for.
+        return Processes.run(command, Pack.findDir(project.root));
     }
 
     public static void runOrFail(Project project, String... args) {
