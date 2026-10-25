@@ -1,0 +1,104 @@
+name: ModpackCI
+
+# Called from a pack repo (see ci.yml in starter.zip). Every push runs the smoke tests that the
+# release types in modpack.ini call for; a v* tag also releases.
+# - A head commit whose message contains "ci-skip" skips CI. Tags still release.
+# - A tag containing "snapshot" only makes a GitHub prerelease.
+# - Release notes come from .changelogs/<tag>.md, or GitHub generates them.
+# Repository variables with the env names below override modpack.ini.
+
+on:
+  workflow_call:
+
+concurrency:
+  group: modpackci-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+env:
+  CURSEFORGE_PROJECT_ID: ${{ vars.CURSEFORGE_PROJECT_ID }}
+  MODRINTH_PROJECT_ID: ${{ vars.MODRINTH_PROJECT_ID }}
+  SIX_SEVEN_PROJECT_ID: ${{ vars.SIX_SEVEN_PROJECT_ID }}
+  GH_RELEASE_TYPES: ${{ vars.GH_RELEASE_TYPES }}
+  SIX_SEVEN_RELEASE_TYPES: ${{ vars.SIX_SEVEN_RELEASE_TYPES }}
+  MODRINTH_RELEASE_TYPES: ${{ vars.MODRINTH_RELEASE_TYPES }}
+  CURSEFORGE_RELEASE_TYPES: ${{ vars.CURSEFORGE_RELEASE_TYPES }}
+
+jobs:
+  plan:
+    if: startsWith(github.ref, 'refs/tags/') || !contains(github.event.head_commit.message, 'ci-skip')
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/cache@v6
+        with:
+          path: ~/.modpackci
+          key: modpackci-${{ runner.os }}-${{ hashFiles('modpackw.properties') }}
+
+      - name: Check the pack index
+        run: sh modpackw checkIndex
+
+      - name: Plan the smoke tests
+        id: plan
+        run: sh modpackw ciPlan
+
+  smoke:
+    needs: plan
+    name: ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/cache@v6
+        with:
+          path: ~/.modpackci
+          key: modpackci-${{ runner.os }}-${{ hashFiles('modpackw.properties') }}
+
+      - name: Install Xvfb
+        if: matrix.client
+        run: sudo apt-get update && sudo apt-get install -y xvfb mesa-utils
+
+      - name: Smoke test
+        run: sh modpackw ${{ matrix.task }}
+
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.task }}-logs
+          if-no-files-found: ignore
+          path: |
+            build/smoke/server-*/smoke.log
+            build/smoke/server-*/logs/
+            build/smoke/server-*/crash-reports/
+            build/smoke/prism/logs/
+            build/smoke/prism/instances/*/.minecraft/logs/
+            build/smoke/prism/instances/*/.minecraft/crash-reports/
+
+  release:
+    needs: smoke
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/cache@v6
+        with:
+          path: ~/.modpackci
+          key: modpackci-${{ runner.os }}-${{ hashFiles('modpackw.properties') }}
+
+      - name: Build and release
+        run: sh modpackw publish
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          SIX_SEVEN_TOKEN: ${{ secrets.SIX_SEVEN_TOKEN }}

@@ -1,0 +1,14 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  modpack:
+    uses: AngelicIndustries/ModpackCI/.github/workflows/modpack.yml@v1
+    secrets: inherit

@@ -1,0 +1,59 @@
+#!/bin/sh
+# ModpackCI wrapper. Downloads Java 25 and the ModpackCI version pinned in
+# modpackw.properties, then runs it. Commit this file, like gradlew.
+set -e
+
+dir=$(cd "$(dirname "$0")" && pwd)
+props="$dir/modpackw.properties"
+prop() {
+    sed -n "s/^[[:space:]]*$1[[:space:]]*=[[:space:]]*//p" "$props" | tail -n 1 | tr -d '\r'
+}
+version=$(prop version)
+repo=$(prop repository)
+repo=${repo:-AngelicIndustries/ModpackCI}
+home=${MODPACKCI_HOME:-$HOME/.modpackci}
+if [ -z "$version" ]; then
+    echo "modpackw: no version in $props" >&2
+    exit 1
+fi
+
+case "$(uname -s)" in
+    Linux) os=linux ;;
+    Darwin) os=macos ;;
+    *) echo "modpackw: unsupported OS $(uname -s), use modpackw.bat on Windows" >&2; exit 1 ;;
+esac
+case "$(uname -m)" in
+    x86_64 | amd64) arch=x64 ;;
+    aarch64 | arm64) arch=aarch64 ;;
+    *) echo "modpackw: unsupported CPU $(uname -m)" >&2; exit 1 ;;
+esac
+
+find_java() {
+    find "$1" -type f -path '*/bin/java' 2>/dev/null | head -n 1
+}
+
+jre="$home/jre/zulu-25-$os-$arch"
+java=$(find_java "$jre")
+if [ -z "$java" ]; then
+    echo "modpackw: downloading Java 25" >&2
+    libc=""
+    if [ "$os" = linux ]; then libc="&lib_c_type=glibc"; fi
+    rm -rf "$jre.tmp"
+    mkdir -p "$jre.tmp"
+    curl -fsSL -o "$jre.tmp/jre.tar.gz" "https://api.foojay.io/disco/v3.0/directuris?distro=zulu&version=25&package_type=jre&javafx_bundled=false&latest=available&operating_system=$os&architecture=$arch&archive_type=tar.gz$libc"
+    tar -xzf "$jre.tmp/jre.tar.gz" -C "$jre.tmp"
+    rm "$jre.tmp/jre.tar.gz"
+    rm -rf "$jre"
+    mv "$jre.tmp" "$jre"
+    java=$(find_java "$jre")
+fi
+
+jar=${MODPACKCI_JAR:-$home/dists/$version/modpackci-$version.jar}
+if [ ! -f "$jar" ]; then
+    echo "modpackw: downloading ModpackCI $version" >&2
+    mkdir -p "$(dirname "$jar")"
+    curl -fsSL -o "$jar.part" "https://github.com/$repo/releases/download/v$version/modpackci-$version.jar"
+    mv "$jar.part" "$jar"
+fi
+
+MODPACKCI_PROJECT_DIR="$dir" exec "$java" -jar "$jar" "$@"
