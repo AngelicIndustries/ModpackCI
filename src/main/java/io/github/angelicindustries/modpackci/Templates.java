@@ -22,7 +22,7 @@ public final class Templates {
     }
 
     public static String keyBlock(Config.Key key) {
-        return "# " + key.doc + "\n" + key.name + " =\n";
+        return "# " + key.doc + " Environment variable: " + key.env + "\n" + key.name + " =\n";
     }
 
     public static String sharedIni() {

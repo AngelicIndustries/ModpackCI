@@ -62,7 +62,11 @@ jobs:
 
       - name: Install Xvfb
         if: matrix.client
-        run: sudo apt-get update && sudo apt-get install -y xvfb mesa-utils
+        # xrandr (x11-xserver-utils) is needed by LWJGL 2, the X libraries by LWJGL 3's GLFW.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb mesa-utils x11-xserver-utils libxcursor1 libxi6 libxrandr2 \
+            libxinerama1 libxxf86vm1 libxtst6
 
       - name: Smoke test
         run: sh modpackw ${{ matrix.task }}
@@ -74,12 +78,10 @@ jobs:
           name: ${{ matrix.task }}-logs
           if-no-files-found: ignore
           path: |
-            build/smoke/server-*/smoke.log
-            build/smoke/server-*/logs/
-            build/smoke/server-*/crash-reports/
-            build/smoke/prism/logs/
-            build/smoke/prism/instances/*/.minecraft/logs/
-            build/smoke/prism/instances/*/.minecraft/crash-reports/
+            build/smoke/*/smoke.log
+            build/smoke/*/console.log
+            build/smoke/*/logs/
+            build/smoke/*/crash-reports/
 
   release:
     needs: smoke

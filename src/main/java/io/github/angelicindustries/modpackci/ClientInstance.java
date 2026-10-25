@@ -10,23 +10,17 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/** A Prism-format instance (also used by Fjord Launcher, PolyMC and the like), synced from the pack. */
+/** A Prism-format instance (also read by Fjord Launcher, PolyMC and MultiMC), for the prism-* release zips. */
 public final class ClientInstance {
     static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
     private static final String STATE = ".modpackci-instance";
-    private static final String META = "https://meta.prismlauncher.org/v1/";
 
     private ClientInstance() {}
 
-    /**
-     * @param java the Java to pin in instance.cfg, or null to let the launcher pick a compatible one
-     * @param localMeta write every component into patches/ so an offline launch needs no metadata
-     *     downloads (the CI smoke test launches offline)
-     */
-    public static void setup(Project project, Path inst, Flavor flavor, String name, Path java, boolean localMeta) {
+    /** Sets up an instance that doesn't pin a Java, so the launcher picks a compatible one. */
+    public static void setup(Project project, Path inst, Flavor flavor, String name) {
         Pack pack = project.pack();
-        String state = flavor.id + " " + (flavor == Flavor.JAVA25 ? Lwjgl3ify.version(pack) : pack.forge)
-                + (localMeta ? " local-meta" : "");
+        String state = flavor.id + " " + (flavor == Flavor.JAVA25 ? Lwjgl3ify.version(pack) : pack.forge);
         Path stateFile = inst.resolve(STATE);
         if (!Files.exists(stateFile) || !FileUtil.readString(stateFile).equals(state)) {
             FileUtil.deleteTree(inst.resolve("patches"));
@@ -35,38 +29,23 @@ public final class ClientInstance {
                 Lwjgl3ify.requireForge(pack);
                 FileUtil.unzip(Lwjgl3ify.asset(project, Lwjgl3ify.version(pack), "-multimc.zip"), inst);
             } else {
-                writeJava8Components(inst, pack.forge, localMeta);
+                writeJava8Components(inst, pack.forge);
             }
             FileUtil.write(stateFile, state);
         }
         Map<String, String> cfg = new LinkedHashMap<>();
         cfg.put("InstanceType", "OneSix");
         cfg.put("name", name);
-        if (java != null) {
-            cfg.put("OverrideJavaLocation", "true");
-            cfg.put("JavaPath", java.toString());
-        }
         setKeys(inst.resolve("instance.cfg"), cfg);
         Path game = inst.resolve(".minecraft");
         Installer.sync(project, "client", game, inst);
         Lwjgl3ify.adjustMods(project, flavor, game.resolve("mods"));
     }
 
-    private static void writeJava8Components(Path inst, String forge, boolean localMeta) {
+    /** Minecraft and Forge; the launcher adds LWJGL and fetches the rest from its metadata. */
+    private static void writeJava8Components(Path inst, String forge) {
         JsonArray components = new JsonArray();
         components.add(component("net.minecraft", "1.7.10", true));
-        if (localMeta) {
-            JsonObject minecraft = Http.fetchJson(META + "net.minecraft/1.7.10.json").getAsJsonObject();
-            String lwjgl = minecraft.getAsJsonArray("requires").get(0).getAsJsonObject().get("suggests").getAsString();
-            FileUtil.write(inst.resolve("patches/net.minecraft.json"), GSON.toJson(minecraft));
-            FileUtil.write(inst.resolve("patches/org.lwjgl.json"),
-                    GSON.toJson(Http.fetchJson(META + "org.lwjgl/" + lwjgl + ".json")));
-            FileUtil.write(inst.resolve("patches/net.minecraftforge.json"),
-                    GSON.toJson(Http.fetchJson(META + "net.minecraftforge/" + forge + ".json")));
-            JsonObject lwjglComponent = component("org.lwjgl", lwjgl, false);
-            lwjglComponent.addProperty("dependencyOnly", true);
-            components.add(lwjglComponent);
-        }
         components.add(component("net.minecraftforge", forge, false));
         JsonObject pack = new JsonObject();
         pack.add("components", components);

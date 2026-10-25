@@ -19,20 +19,20 @@ public final class Main {
     private static final Map<String, Task> TASKS = new LinkedHashMap<>();
 
     static {
-        task("runClient", "Syncs the pack into your launcher and plays it on Java 8", (p, a) -> {
-            Launchers.runClient(p, Flavor.JAVA8);
+        task("runClient", "Plays the pack on Java 8, in run/client-java8", (p, a) -> {
+            ClientRun.run(p, Flavor.JAVA8);
             return 0;
         });
-        task("runClient25", "Same, on Java 25 with lwjgl3ify", (p, a) -> {
-            Launchers.runClient(p, Flavor.JAVA25);
+        task("runClient25", "Plays the pack on Java 25 with lwjgl3ify, in run/client-java25", (p, a) -> {
+            ClientRun.run(p, Flavor.JAVA25);
             return 0;
         });
         task("runServer", "Runs a local server in run/server-java8", (p, a) -> {
-            Launchers.runServer(p, Flavor.JAVA8);
+            ServerInstall.run(p, Flavor.JAVA8);
             return 0;
         });
         task("runServer25", "Same, on Java 25 in run/server-java25", (p, a) -> {
-            Launchers.runServer(p, Flavor.JAVA25);
+            ServerInstall.run(p, Flavor.JAVA25);
             return 0;
         });
         for (Flavor flavor : Flavor.values()) {

@@ -171,7 +171,7 @@ public final class Builds {
         Path inst = FileUtil.tempDir("modpackci-instance-");
         try {
             String name = project.pack().name + (flavor == Flavor.JAVA8 ? " (Java 8)" : " (Java 17+)");
-            ClientInstance.setup(project, inst, flavor, name, null, false);
+            ClientInstance.setup(project, inst, flavor, name);
             try (ZipOutputStream dst = new ZipOutputStream(Files.newOutputStream(out))) {
                 for (Path file : FileUtil.walkFiles(inst)) {
                     String rel = inst.relativize(file).toString().replace('\\', '/');

@@ -41,6 +41,13 @@ public final class ServerInstall {
         Lwjgl3ify.adjustMods(project, flavor, dir.resolve("mods"));
     }
 
+    /** runServer: a local server in run/, with its console attached, like GTNH's runServer. */
+    public static void run(Project project, Flavor flavor) {
+        Path dir = project.root.resolve("run").resolve("server-" + flavor.id);
+        setup(project, dir, flavor);
+        Processes.run(command(project, flavor), dir);
+    }
+
     public static String universalJar(Pack pack) {
         return "forge-" + pack.forgeMavenVersion() + "-universal.jar";
     }

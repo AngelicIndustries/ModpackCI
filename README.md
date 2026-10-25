@@ -8,7 +8,7 @@ Download `starter.zip` from the [latest release](https://github.com/AngelicIndus
 
 | Task | What it does |
 |---|---|
-| `runClient`, `runClient25` | Sync the pack into Prism Launcher (or Fjord Launcher, PolyMC) and play it on Java 8 or 25 |
+| `runClient`, `runClient25` | Play the pack on Java 8 or 25, in `run/`, no launcher needed |
 | `runServer`, `runServer25` | Run a local server in `run/` |
 | `packwiz <args>` | packwiz, bundled |
 | `build`, `build<Type>` | Build release files into `build/` |
@@ -19,7 +19,7 @@ The Java 8 runs leave lwjgl3ify out. The Java 25 runs add lwjgl3ify and UniMixin
 
 ## Settings
 
-`modpack.ini` (committed) lists project IDs and which files go where. `modpack-local.ini` (gitignored) overrides it on one machine and also sets Java, launcher and packwiz paths. Environment variables override both; the names are in `modpack.ini`'s comments and `modpack-local.ini.example`.
+`modpack.ini` (committed) lists project IDs and which files go where. `modpack-local.ini` (gitignored) overrides it on one machine and also sets Java and packwiz paths. Environment variables override both; the names are in `modpack.ini`'s comments and `modpack-local.ini.example`.
 
 Release types: `mrpack-slim` (mods download from their original hosts), `mrpack-fat` (everything inside), `prism-java8` and `prism-java17` (Prism instance zips), `curseforge-zip`.
 

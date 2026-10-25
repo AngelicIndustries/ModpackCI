@@ -17,7 +17,7 @@ class HelpersTest {
     @Test
     void mavenPathsIncludeTheClassifier() {
         assertEquals("org/lwjgl/lwjgl/lwjgl-platform/2.9.4/lwjgl-platform-2.9.4-natives-linux.jar",
-                Prefetch.mavenPath("org.lwjgl.lwjgl:lwjgl-platform:2.9.4:natives-linux"));
+                Components.mavenPath("org.lwjgl.lwjgl:lwjgl-platform:2.9.4:natives-linux"));
     }
 
     @Test
