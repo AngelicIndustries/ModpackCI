@@ -93,8 +93,19 @@ public final class LocalMods {
                 Log.info("building " + entry.spec);
                 Processes.runOrFail(List.of(gradlew.toString(), "assemble"), entry.path, "building " + entry.spec);
             }
-            out.add(newestJar(entry).orElseThrow(() -> new Fail(Config.Key.LOCAL_MODS.name + ": no jar in "
-                    + entry.spec + "/build/libs" + (build ? "" : ". Run without --no-build to build it."))));
+            Path jar = newestJar(entry).orElseThrow(() -> new Fail(Config.Key.LOCAL_MODS.name + ": no jar in "
+                    + entry.spec + "/build/libs" + (build ? "" : ". Run without --no-build to build it.")));
+            if (!build) {
+                // Dev runs only update the -dev jar, which can't run outside the dev environment. A
+                // build writes its -dev jar before the release jar, so a newer one means a later dev run.
+                list(jar.getParent()).stream()
+                        .filter(f -> f.getFileName().toString().endsWith("-dev.jar")
+                                && f.toFile().lastModified() > jar.toFile().lastModified())
+                        .max(Comparator.comparing(f -> f.toFile().lastModified()))
+                        .ifPresent(f -> Log.warn(entry.spec + ": " + f.getFileName() + " is newer than "
+                                + jar.getFileName() + ", so the jar used may be out of date. Run without --no-build."));
+            }
+            out.add(jar);
         }
         return out;
     }

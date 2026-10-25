@@ -112,6 +112,12 @@ public final class Updates {
                 changed.add(Config.SHARED_FILE + " (new keys added at the end)");
             }
         }
+        // Generated from the keys, so it's rewritten rather than merged.
+        Path example = root.resolve(Config.LOCAL_FILE + ".example");
+        if (!Templates.localIniExample().equals(read(example))) {
+            FileUtil.write(example, Templates.localIniExample());
+            changed.add(Config.LOCAL_FILE + ".example");
+        }
         String major = Main.VERSION.split("\\.")[0];
         Pattern workflowRef = Pattern.compile(Pattern.quote(project.repository + "/.github/workflows/modpack.yml@v") + "\\d+\\b");
         Path workflows = root.resolve(".github/workflows");
