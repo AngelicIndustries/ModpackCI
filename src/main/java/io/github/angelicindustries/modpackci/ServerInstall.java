@@ -3,7 +3,6 @@ package io.github.angelicindustries.modpackci;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 
 /** A Forge 1.7.10 server, synced from the pack. */
 public final class ServerInstall {
@@ -32,11 +31,6 @@ public final class ServerInstall {
             FileUtil.copy(Lwjgl3ify.java9Args(project, version), dir.resolve("java9args.txt"));
         }
         FileUtil.write(dir.resolve("eula.txt"), "eula=true\n");
-        Path properties = dir.resolve("server.properties");
-        if (!Files.exists(properties)) {
-            FileUtil.write(properties, "");
-        }
-        ClientInstance.setKeys(properties, Map.of("online-mode", "false"));
         Installer.sync(project, "server", dir, null);
         Lwjgl3ify.adjustMods(project, flavor, dir.resolve("mods"));
     }

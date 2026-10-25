@@ -40,7 +40,12 @@ public final class Smoke {
     public static void server(Project project, Flavor flavor, int timeoutSeconds) {
         Path srv = dir(project).resolve("server-" + flavor.id);
         ServerInstall.setup(project, srv, flavor);
-        ClientInstance.setKeys(srv.resolve("server.properties"), Map.of("server-port", String.valueOf(freePort())));
+        // Offline, so the test needs no accounts; a free port, so it never clashes with a running server.
+        Path properties = srv.resolve("server.properties");
+        if (!Files.exists(properties)) {
+            FileUtil.write(properties, "");
+        }
+        ClientInstance.setKeys(properties, Map.of("online-mode", "false", "server-port", String.valueOf(freePort())));
         clearReports(srv);
         Path log = srv.resolve("smoke.log");
         ProcessBuilder server = new ProcessBuilder(ServerInstall.command(project, flavor)).directory(srv.toFile())
