@@ -18,6 +18,9 @@ import java.util.stream.Stream;
  * The CI smoke tests. The server test starts the server, sends "stop" once it's up and checks it
  * shut down cleanly. The client test starts the game under Xvfb with a helper mod that opens a new
  * singleplayer world, runs it for 30 seconds and quits.
+ *
+ * <p>Both run with CI=true, like most CI systems set, so mods that relax checks on CI (for example
+ * settings only a real server needs) do so in local test runs too.
  */
 public final class Smoke {
     private static final String WORLD_RAN = "ModpackCI smoke test: world ran for ";
@@ -40,8 +43,10 @@ public final class Smoke {
         ClientInstance.setKeys(srv.resolve("server.properties"), Map.of("server-port", String.valueOf(freePort())));
         clearReports(srv);
         Path log = srv.resolve("smoke.log");
-        Process proc = start(new ProcessBuilder(ServerInstall.command(project, flavor)).directory(srv.toFile())
-                .redirectErrorStream(true).redirectOutput(log.toFile()));
+        ProcessBuilder server = new ProcessBuilder(ServerInstall.command(project, flavor)).directory(srv.toFile())
+                .redirectErrorStream(true).redirectOutput(log.toFile());
+        server.environment().put("CI", "true");
+        Process proc = start(server);
         try {
             waitFor(proc, log, log, "For help, type \"help\"", timeoutSeconds);
             try (OutputStream stdin = proc.getOutputStream()) {
@@ -92,6 +97,7 @@ public final class Smoke {
         Path xdgData = game.resolve("xdg-data");
         FileUtil.write(xdgData.resolve(".keep"), "");
         builder.environment().put("XDG_DATA_HOME", xdgData.toString());
+        builder.environment().put("CI", "true");
         Process proc = start(builder);
         try {
             waitFor(proc, console, log, WORLD_RAN, timeoutSeconds);
