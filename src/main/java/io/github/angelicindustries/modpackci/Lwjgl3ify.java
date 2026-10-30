@@ -69,6 +69,15 @@ public final class Lwjgl3ify {
                         Files.delete(f);
                     }
                 }
+                List<String> left = new ArrayList<>();
+                for (Pack.Meta m : project.modernJavaMods()) {
+                    if (m.path().startsWith("mods/") && Files.deleteIfExists(modsDir.resolve(m.filename()))) {
+                        left.add(m.name());
+                    }
+                }
+                if (!left.isEmpty()) {
+                    Log.info("left out on Java 8: " + String.join(", ", left));
+                }
             } else {
                 if (pack.lwjgl3ifyVersion().isEmpty()) {
                     String name = "lwjgl3ify-" + DEFAULT_VERSION + ".jar";

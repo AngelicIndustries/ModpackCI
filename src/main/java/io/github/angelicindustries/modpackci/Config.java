@@ -33,6 +33,10 @@ public final class Config {
                 "Files uploaded to Modrinth. The first one is the version's primary file."),
         CURSEFORGE_RELEASE_TYPES("curseForgeReleaseTypes", "CURSEFORGE_RELEASE_TYPES", true,
                 "Files uploaded to CurseForge."),
+        MODERN_JAVA_MODS("modernJavaMods", "MODPACKCI_MODERN_JAVA_MODS", true,
+                "Pack mods that need lwjgl3ify, so Java 17 or newer: their .pw.toml names without the extension,"
+                        + " comma-separated. Java 8 runs, tests and prism-java8 zips leave them out, and an .mrpack"
+                        + " offers them as optional unless the pack lists lwjgl3ify."),
         JAVA8("java8", "MODPACKCI_JAVA8", false, "Java 8 binary to use instead of the downloaded one."),
         JAVA25("java25", "MODPACKCI_JAVA25", false, "Java 25 binary to use instead of the downloaded one."),
         PACKWIZ("packwiz", "MODPACKCI_PACKWIZ", false, "packwiz binary to use instead of the downloaded one."),

@@ -1,6 +1,8 @@
 package io.github.angelicindustries.modpackci;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /** The pack repo ModpackCI runs in, plus the shared cache in ~/.modpackci. */
@@ -38,6 +40,26 @@ public final class Project {
             pack = Pack.load(root);
         }
         return pack;
+    }
+
+    /** The pack mods {@code modernJavaMods} names, which need lwjgl3ify and so Java 17 or newer. */
+    public List<Pack.Meta> modernJavaMods() {
+        String value = config.get(Config.Key.MODERN_JAVA_MODS);
+        List<Pack.Meta> out = new ArrayList<>();
+        if (value == null) {
+            return out;
+        }
+        for (String raw : value.split(",")) {
+            String name = raw.strip();
+            if (name.isEmpty()) {
+                continue;
+            }
+            out.add(pack().metas.stream()
+                    .filter(m -> m.metaFile().getFileName().toString().equals(name + ".pw.toml"))
+                    .findFirst()
+                    .orElseThrow(() -> new Fail(Config.Key.MODERN_JAVA_MODS.name + ": the pack has no " + name + ".pw.toml")));
+        }
+        return out;
     }
 
     /** Reread pack.toml and the index, after something changed them. */

@@ -23,6 +23,8 @@ The Java 8 runs leave lwjgl3ify out. The Java 25 runs add lwjgl3ify and UniMixin
 
 `localMods` in `modpack-local.ini` adds mods you're working on to the run tasks: Gradle projects, built first, or jars. One with the same mod ID as a pack mod replaces it for the run.
 
+`modernJavaMods` in `modpack.ini` names pack mods that need lwjgl3ify, so Java 17 or newer (their `.pw.toml` names without the extension, comma-separated). Java 8 runs, tests and `prism-java8` zips leave them out, and an `.mrpack` offers them as optional unless the pack lists lwjgl3ify.
+
 Release types: `mrpack-slim` (mods download from their original hosts), `mrpack-fat` (everything inside), `prism-java8` and `prism-java17` (Prism instance zips), `curseforge-zip`.
 
 | Destination | Types key | Project key | Token |

@@ -16,9 +16,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
@@ -114,6 +116,7 @@ public final class Builds {
                 if (!curseforge.isEmpty()) {
                     throw new Fail("packwiz didn't export these CurseForge files: " + curseforge.keySet());
                 }
+                offerModernJavaMods(project, files);
                 sortFiles(files);
                 FileUtil.addToZip(dst, INDEX, GSON.toJson(index).getBytes(StandardCharsets.UTF_8));
             }
@@ -124,6 +127,38 @@ public final class Builds {
             throw new UncheckedIOException(e);
         } finally {
             FileUtil.deleteTree(tmp);
+        }
+    }
+
+    /**
+     * An .mrpack can't tell Java versions apart, so unless the pack lists lwjgl3ify (and only runs on
+     * modern Java) the mods that need it become optional: a Java 8 install can leave them out.
+     */
+    static void offerModernJavaMods(Project project, JsonArray files) {
+        if (project.pack().lwjgl3ifyVersion().isPresent()) {
+            return;
+        }
+        Set<String> paths = new HashSet<>();
+        for (Pack.Meta m : project.modernJavaMods()) {
+            paths.add(m.path());
+        }
+        markOptional(paths, files);
+    }
+
+    /** Makes the files at {@code paths} optional on each side that supports them. */
+    static void markOptional(Set<String> paths, JsonArray files) {
+        for (JsonElement el : files) {
+            JsonObject f = el.getAsJsonObject();
+            if (!paths.contains(str(f, "path"))) {
+                continue;
+            }
+            JsonObject env = f.has("env") ? f.getAsJsonObject("env") : new JsonObject();
+            for (String side : new String[] {"client", "server"}) {
+                if (!"unsupported".equals(str(env, side))) {
+                    env.addProperty(side, "optional");
+                }
+            }
+            f.add("env", env);
         }
     }
 

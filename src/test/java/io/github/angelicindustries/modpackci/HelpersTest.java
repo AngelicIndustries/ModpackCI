@@ -3,7 +3,11 @@ package io.github.angelicindustries.modpackci;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import java.nio.file.Path;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class HelpersTest {
@@ -31,5 +35,22 @@ class HelpersTest {
     void releaseChannelFollowsTheVersion() {
         assertEquals("beta", Publish.channel("1.0.0-beta.2"));
         assertEquals("release", Publish.channel("1.0.0"));
+    }
+
+    @Test
+    void modernJavaModsBecomeOptionalOnTheSidesTheyRunOn() {
+        JsonArray files = JsonParser.parseString("""
+                [{"path": "mods/dh.jar", "env": {"client": "required", "server": "unsupported"}},
+                 {"path": "mods/both.jar"},
+                 {"path": "mods/other.jar", "env": {"client": "required", "server": "required"}}]
+                """).getAsJsonArray();
+        Builds.markOptional(Set.of("mods/dh.jar", "mods/both.jar"), files);
+        JsonObject dh = files.get(0).getAsJsonObject().getAsJsonObject("env");
+        assertEquals("optional", dh.get("client").getAsString());
+        assertEquals("unsupported", dh.get("server").getAsString());
+        JsonObject both = files.get(1).getAsJsonObject().getAsJsonObject("env");
+        assertEquals("optional", both.get("client").getAsString());
+        assertEquals("optional", both.get("server").getAsString());
+        assertEquals("required", files.get(2).getAsJsonObject().getAsJsonObject("env").get("client").getAsString());
     }
 }
