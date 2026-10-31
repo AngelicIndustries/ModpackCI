@@ -37,6 +37,11 @@ public final class Config {
                 "Pack mods that need lwjgl3ify, so Java 17 or newer: their .pw.toml names without the extension,"
                         + " comma-separated. Java 8 runs, tests and prism-java8 zips leave them out, and an .mrpack"
                         + " offers them as optional unless the pack lists lwjgl3ify."),
+        JAVA8_JVM_ARGS("java8JvmArgs", "MODPACKCI_JAVA8_JVM_ARGS", true,
+                "Extra JVM arguments for Java 8 runs, tests and prism-java8 instances, separated by spaces."),
+        JAVA25_JVM_ARGS("java25JvmArgs", "MODPACKCI_JAVA25_JVM_ARGS", true,
+                "Extra JVM arguments for Java 25 runs, tests and prism-java17 instances, separated by spaces, for"
+                        + " example -XX:+UseZGC. An .mrpack can't carry JVM arguments."),
         JAVA8("java8", "MODPACKCI_JAVA8", false, "Java 8 binary to use instead of the downloaded one."),
         JAVA25("java25", "MODPACKCI_JAVA25", false, "Java 25 binary to use instead of the downloaded one."),
         PACKWIZ("packwiz", "MODPACKCI_PACKWIZ", false, "packwiz binary to use instead of the downloaded one."),

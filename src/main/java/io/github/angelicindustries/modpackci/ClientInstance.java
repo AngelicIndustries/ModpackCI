@@ -36,6 +36,11 @@ public final class ClientInstance {
         Map<String, String> cfg = new LinkedHashMap<>();
         cfg.put("InstanceType", "OneSix");
         cfg.put("name", name);
+        List<String> jvmArgs = project.jvmArgs(flavor);
+        if (!jvmArgs.isEmpty()) {
+            cfg.put("OverrideJavaArgs", "true");
+            cfg.put("JvmArgs", String.join(" ", jvmArgs));
+        }
         setKeys(inst.resolve("instance.cfg"), cfg);
         Path game = inst.resolve(".minecraft");
         Installer.sync(project, "client", game, inst);

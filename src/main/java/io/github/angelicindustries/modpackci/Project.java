@@ -62,6 +62,20 @@ public final class Project {
         return out;
     }
 
+    /** The extra JVM arguments modpack.ini sets for a flavor. */
+    public List<String> jvmArgs(Flavor flavor) {
+        String value = config.get(flavor == Flavor.JAVA8 ? Config.Key.JAVA8_JVM_ARGS : Config.Key.JAVA25_JVM_ARGS);
+        List<String> out = new ArrayList<>();
+        if (value != null) {
+            for (String arg : value.trim().split("\\s+")) {
+                if (!arg.isEmpty()) {
+                    out.add(arg);
+                }
+            }
+        }
+        return out;
+    }
+
     /** Reread pack.toml and the index, after something changed them. */
     public void reloadPack() {
         pack = null;

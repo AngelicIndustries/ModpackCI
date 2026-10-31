@@ -25,6 +25,8 @@ The Java 8 runs leave lwjgl3ify out. The Java 25 runs add lwjgl3ify and UniMixin
 
 `modernJavaMods` in `modpack.ini` names pack mods that need lwjgl3ify, so Java 17 or newer (their `.pw.toml` names without the extension, comma-separated). Java 8 runs, tests and `prism-java8` zips leave them out, and an `.mrpack` offers them as optional unless the pack lists lwjgl3ify.
 
+`java8JvmArgs` and `java25JvmArgs` in `modpack.ini` add JVM arguments (for example `-XX:+UseZGC` on Java 25) to the runs, tests and Prism zips of that Java version. An `.mrpack` can't carry JVM arguments.
+
 Release types: `mrpack-slim` (mods download from their original hosts), `mrpack-fat` (everything inside), `prism-java8` and `prism-java17` (Prism instance zips), `curseforge-zip`.
 
 | Destination | Types key | Project key | Token |

@@ -2,6 +2,7 @@ package io.github.angelicindustries.modpackci;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 /** A Forge 1.7.10 server, synced from the pack. */
@@ -50,9 +51,11 @@ public final class ServerInstall {
     }
 
     public static List<String> command(Project project, Flavor flavor) {
-        String java = Javas.get(project, flavor.javaVersion).toString();
-        return flavor == Flavor.JAVA25
-                ? List.of(java, "-Xmx2G", "@java9args.txt", "-jar", "lwjgl3ify-forgePatches.jar", "nogui")
-                : List.of(java, "-Xmx2G", "-jar", universalJar(project.pack()), "nogui");
+        List<String> command = new ArrayList<>(List.of(Javas.get(project, flavor.javaVersion).toString(), "-Xmx2G"));
+        command.addAll(project.jvmArgs(flavor));
+        command.addAll(flavor == Flavor.JAVA25
+                ? List.of("@java9args.txt", "-jar", "lwjgl3ify-forgePatches.jar", "nogui")
+                : List.of("-jar", universalJar(project.pack()), "nogui"));
+        return command;
     }
 }

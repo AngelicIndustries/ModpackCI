@@ -59,6 +59,7 @@ public final class ClientRun {
         List<String> command = new ArrayList<>(List.of(Javas.get(project, flavor.javaVersion).toString(),
                 "-Xms512m", "-Xmx4G", "-Djava.library.path=" + natives,
                 "-Dfml.ignoreInvalidMinecraftCertificates=true", "-Dfml.ignorePatchDiscrepancies=true"));
+        command.addAll(project.jvmArgs(flavor));
         if (Platform.current() == Platform.MACOS && launch.traits().contains("FirstThreadOnMacOS")) {
             command.add("-XstartOnFirstThread");
         }

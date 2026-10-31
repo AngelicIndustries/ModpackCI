@@ -6,7 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 
@@ -52,5 +54,13 @@ class HelpersTest {
         assertEquals("optional", both.get("client").getAsString());
         assertEquals("optional", both.get("server").getAsString());
         assertEquals("required", files.get(2).getAsJsonObject().getAsJsonObject("env").get("client").getAsString());
+    }
+
+    @Test
+    void jvmArgsSplitOnWhitespacePerJavaVersion(@org.junit.jupiter.api.io.TempDir Path dir) throws Exception {
+        Files.writeString(dir.resolve("modpack.ini"), "java25JvmArgs =  -XX:+UseZGC   -XX:+AlwaysPreTouch\n");
+        Project project = new Project(dir);
+        assertEquals(List.of("-XX:+UseZGC", "-XX:+AlwaysPreTouch"), project.jvmArgs(Flavor.JAVA25));
+        assertEquals(List.of(), project.jvmArgs(Flavor.JAVA8));
     }
 }
