@@ -10,6 +10,7 @@ Download `starter.zip` from the [latest release](https://github.com/AngelicIndus
 |---|---|
 | `runClient`, `runClient25` | Play the pack on Java 8 or 25, in `run/`, no launcher needed |
 | `runServer`, `runServer25` | Run a local server in `run/` |
+| `syncConfig [client\|client25\|server\|server25]` | Copy the pack's config files over the run folders' (all, or one; `--dry-run` lists them) |
 | `packwiz <args>` | packwiz, bundled |
 | `build`, `build<Type>` | Build release files into `build/` |
 | `smokeServer[25]`, `smokeClient[25]` | The CI tests: start a server, or open a world in a client under Xvfb (Linux) |

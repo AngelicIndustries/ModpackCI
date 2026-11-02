@@ -35,6 +35,10 @@ public final class Main {
             ServerInstall.run(p, Flavor.JAVA25, !a.contains("--no-build"));
             return 0;
         });
+        task("syncConfig", "Copies the pack's config files into the run folders: syncConfig [client|client25|server|server25] [--dry-run]", (p, a) -> {
+            ConfigSync.run(p, a);
+            return 0;
+        });
         for (Flavor flavor : Flavor.values()) {
             task("smokeServer" + flavor.taskSuffix, "CI test: starts and stops a " + flavor.label + " server",
                     (p, a) -> {

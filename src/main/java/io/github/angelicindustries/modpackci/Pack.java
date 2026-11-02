@@ -80,6 +80,21 @@ public final class Pack {
         return new Pack(dir, pack.getString("name"), pack.getString("version", () -> "0.0.0"), forge, metas);
     }
 
+    /** The plain files the index lists (not .pw.toml mods), as paths relative to the pack. */
+    static List<String> indexedFiles(Path dir) {
+        TomlParseResult pack = parse(dir.resolve("pack.toml"));
+        TomlParseResult index = parse(dir.resolve(pack.getString("index.file", () -> "index.toml")));
+        List<String> files = new ArrayList<>();
+        TomlArray entries = index.getArrayOrEmpty("files");
+        for (int i = 0; i < entries.size(); i++) {
+            TomlTable entry = entries.getTable(i);
+            if (!entry.getBoolean("metafile", () -> false)) {
+                files.add(entry.getString("file").replace('\\', '/'));
+            }
+        }
+        return files;
+    }
+
     private static TomlParseResult parse(Path file) {
         if (!Files.exists(file)) {
             throw new Fail("missing " + file);
