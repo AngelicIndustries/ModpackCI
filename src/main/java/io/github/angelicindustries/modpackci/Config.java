@@ -48,7 +48,8 @@ public final class Config {
         LOCAL_MODS("localMods", "MODPACKCI_LOCAL_MODS", false,
                 "Mods on this machine that runClient and runServer add: Gradle projects (built with gradlew assemble)"
                         + " or jars, comma-separated, relative to this folder. One with the same mod ID as a pack mod"
-                        + " replaces it. Add @client or @server for one side only. --no-build skips the builds."),
+                        + " replaces it. Add @client or @server for one side only. A project is only built again when its files changed;"
+                        + " --rebuild builds them anyway, --no-build skips the builds."),
         CURSEFORGE_TOKEN("curseForgeToken", "CURSEFORGE_TOKEN", false, "CurseForge upload token."),
         MODRINTH_TOKEN("modrinthToken", "MODRINTH_TOKEN", false, "Modrinth token."),
         SIX_SEVEN_TOKEN("sixSevenToken", "SIX_SEVEN_TOKEN", false, "67minecraft.com token.");

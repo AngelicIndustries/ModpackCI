@@ -27,7 +27,7 @@ public final class ClientRun {
     private ClientRun() {}
 
     /** runClient: plays the pack in run/client-java8 or run/client-java25, with the local mods. */
-    public static void run(Project project, Flavor flavor, boolean buildLocalMods) {
+    public static void run(Project project, Flavor flavor, LocalMods.Build buildLocalMods) {
         Path game = project.root.resolve("run").resolve("client-" + flavor.id);
         LocalMods.restore(game);
         List<Path> local = LocalMods.jars(project, "client", buildLocalMods);

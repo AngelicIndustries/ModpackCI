@@ -7,15 +7,24 @@ import com.google.gson.JsonParser;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import java.util.zip.ZipFile;
@@ -33,9 +42,26 @@ public final class LocalMods {
     private static final Pattern NOT_RELEASE_JAR =
             Pattern.compile(".*-(dev|dev-preshadow|preshadow|predowngrade|sources|javadoc|api|slim)\\.jar");
 
+    /** Where the fingerprints of the last builds are kept, in the pack's build folder. */
+    private static final String FINGERPRINTS = "local-mods.json";
+    /** Folders at a project's root that never feed its jar: Gradle's output, the dev runs and logs. */
+    private static final Set<String> NOT_INPUTS = Set.of("build", "run", "out", "logs");
+
     private LocalMods() {}
 
     private record Entry(String spec, Path path, String side) {}
+
+    /** Which Gradle projects runClient and runServer build: the changed ones, all, or none. */
+    public enum Build {
+        CHANGED,
+        ALL,
+        NONE;
+
+        /** --rebuild builds every project, --no-build none. */
+        public static Build of(List<String> args) {
+            return args.contains("--no-build") ? NONE : args.contains("--rebuild") ? ALL : CHANGED;
+        }
+    }
 
     /**
      * Undoes the last run: removes the local jars it added and puts back the pack jars they
@@ -72,11 +98,15 @@ public final class LocalMods {
     }
 
     /**
-     * The jars for a run on {@code side}, building Gradle projects first unless {@code build} is
-     * false. Runs before the sync, so a broken build stops the run early.
+     * The jars for a run on {@code side}, building Gradle projects first as {@code build} says. A
+     * project whose files are the same as at its last build (see {@link #fingerprint}) isn't built
+     * again. Runs before the sync, so a broken build stops the run early.
      */
-    public static List<Path> jars(Project project, String side, boolean build) {
+    public static List<Path> jars(Project project, String side, Build build) {
         List<Path> out = new ArrayList<>();
+        Path fingerprintFile = project.buildDir.resolve(FINGERPRINTS);
+        Map<String, String> fingerprints = readFingerprints(fingerprintFile);
+        boolean built = false;
         for (Entry entry : entries(project)) {
             if (!entry.side.equals("both") && !entry.side.equals(side)) {
                 continue;
@@ -89,13 +119,20 @@ public final class LocalMods {
             if (!Files.isRegularFile(gradlew)) {
                 throw new Fail(Config.Key.LOCAL_MODS.name + ": " + entry.spec + " is neither a jar nor a Gradle project with a wrapper");
             }
-            if (build) {
+            String key = entry.path.toString();
+            if (build == Build.CHANGED && fingerprint(entry.path).equals(fingerprints.get(key))
+                    && newestJar(entry).isPresent()) {
+                Log.info(entry.spec + " is unchanged since its last build");
+            } else if (build != Build.NONE) {
                 Log.info("building " + entry.spec);
                 Processes.runOrFail(List.of(gradlew.toString(), "assemble"), entry.path, "building " + entry.spec);
+                // Taken after the build, so files the build itself rewrites don't count as changes
+                fingerprints.put(key, fingerprint(entry.path));
+                built = true;
             }
             Path jar = newestJar(entry).orElseThrow(() -> new Fail(Config.Key.LOCAL_MODS.name + ": no jar in "
-                    + entry.spec + "/build/libs" + (build ? "" : ". Run without --no-build to build it.")));
-            if (!build) {
+                    + entry.spec + "/build/libs" + (build != Build.NONE ? "" : ". Run without --no-build to build it.")));
+            if (build == Build.NONE) {
                 // Dev runs only update the -dev jar, which can't run outside the dev environment. A
                 // build writes its -dev jar before the release jar, so a newer one means a later dev run.
                 list(jar.getParent()).stream()
@@ -107,7 +144,84 @@ public final class LocalMods {
             }
             out.add(jar);
         }
+        if (built) {
+            writeFingerprints(fingerprintFile, fingerprints);
+        }
         return out;
+    }
+
+    /**
+     * What a Gradle project's jar is built from, cheaply: every file's path, size and modification
+     * time, leaving out dot folders (.git, .gradle) and the root's build, run, out and logs folders.
+     * It changes whenever a file that could change the jar does, and sometimes when none did, which
+     * only costs a build. Files outside the project, like a sibling jar it compiles against, aren't
+     * seen: --rebuild covers those.
+     */
+    static String fingerprint(Path dir) {
+        List<String> files = new ArrayList<>();
+        try {
+            Files.walkFileTree(dir, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult preVisitDirectory(Path folder, BasicFileAttributes attributes) {
+                    if (folder.equals(dir)) {
+                        return FileVisitResult.CONTINUE;
+                    }
+                    String name = folder.getFileName().toString();
+                    boolean skip = name.startsWith(".") || folder.getParent().equals(dir) && NOT_INPUTS.contains(name);
+                    return skip ? FileVisitResult.SKIP_SUBTREE : FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) {
+                    files.add(dir.relativize(file).toString().replace('\\', '/') + "\t" + attributes.size() + "\t"
+                            + attributes.lastModifiedTime().toMillis());
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        Collections.sort(files);
+        try {
+            MessageDigest sha = MessageDigest.getInstance("SHA-256");
+            for (String file : files) {
+                sha.update((file + "\n").getBytes(StandardCharsets.UTF_8));
+            }
+            return HexFormat.of().formatHex(sha.digest());
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private static Map<String, String> readFingerprints(Path file) {
+        Map<String, String> out = new TreeMap<>();
+        if (!Files.isRegularFile(file)) {
+            return out;
+        }
+        try {
+            JsonElement root = JsonParser.parseString(Files.readString(file));
+            if (root.isJsonObject()) {
+                for (Map.Entry<String, JsonElement> e : root.getAsJsonObject().entrySet()) {
+                    if (e.getValue().isJsonPrimitive()) {
+                        out.put(e.getKey(), e.getValue().getAsString());
+                    }
+                }
+            }
+        } catch (IOException | RuntimeException e) {
+            // Unreadable: every project gets built once and the file is written again.
+        }
+        return out;
+    }
+
+    private static void writeFingerprints(Path file, Map<String, String> fingerprints) {
+        JsonObject root = new JsonObject();
+        fingerprints.forEach(root::addProperty);
+        try {
+            Files.createDirectories(file.getParent());
+            Files.writeString(file, root.toString());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     /** Copies the jars into the synced mods folder, moving aside pack jars with the same mod IDs. */
